@@ -1,0 +1,48 @@
+using System;
+using System.Runtime.CompilerServices;
+using Il2CppInterop.Common.Attributes;
+using Il2CppInterop.Runtime;
+using Il2CppInterop.Runtime.InteropTypes;
+
+namespace Il2Cpp;
+
+public class T3 : mResources
+{
+	private static readonly IntPtr NativeMethodInfoPtr_load_Public_Static_Void_0;
+
+	private static readonly IntPtr NativeMethodInfoPtr__ctor_Public_Void_0;
+
+	static T3()
+	{
+		Il2CppClassPointerStore<T3>.NativeClassPtr = IL2CPP.GetIl2CppClass("Assembly-CSharp.dll", "", "T3");
+		IL2CPP.il2cpp_runtime_class_init(Il2CppClassPointerStore<T3>.NativeClassPtr);
+		NativeMethodInfoPtr_load_Public_Static_Void_0 = IL2CPP.GetIl2CppMethodByToken(Il2CppClassPointerStore<T3>.NativeClassPtr, 100666318);
+		NativeMethodInfoPtr__ctor_Public_Void_0 = IL2CPP.GetIl2CppMethodByToken(Il2CppClassPointerStore<T3>.NativeClassPtr, 100666319);
+	}
+
+	[CallerCount(1)]
+	[CachedScanResults(RefRangeStart = 108230, RefRangeEnd = 108231, XrefRangeStart = 105157, XrefRangeEnd = 108230, MetadataInitTokenRva = 0L, MetadataInitFlagRva = 0L)]
+	public unsafe static void load()
+	{
+		IntPtr* ptr = null;
+		Unsafe.SkipInit(out IntPtr intPtr2);
+		IntPtr intPtr = IL2CPP.il2cpp_runtime_invoke(NativeMethodInfoPtr_load_Public_Static_Void_0, (IntPtr)0, (void**)ptr, ref intPtr2);
+		Il2CppException.RaiseExceptionIfNecessary(intPtr2);
+	}
+
+	[CallerCount(0)]
+	[CachedScanResults(RefRangeStart = 0, RefRangeEnd = 0, XrefRangeStart = 108231, XrefRangeEnd = 108235, MetadataInitTokenRva = 0L, MetadataInitFlagRva = 0L)]
+	public unsafe T3()
+		: this(IL2CPP.il2cpp_object_new(Il2CppClassPointerStore<T3>.NativeClassPtr))
+	{
+		IntPtr* ptr = null;
+		Unsafe.SkipInit(out IntPtr intPtr2);
+		IntPtr intPtr = IL2CPP.il2cpp_runtime_invoke(NativeMethodInfoPtr__ctor_Public_Void_0, IL2CPP.Il2CppObjectBaseToPtrNotNull((Il2CppObjectBase)(object)this), (void**)ptr, ref intPtr2);
+		Il2CppException.RaiseExceptionIfNecessary(intPtr2);
+	}
+
+	public T3(IntPtr pointer)
+		: base(pointer)
+	{
+	}
+}
