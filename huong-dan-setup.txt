@@ -1,0 +1,35 @@
+=========================================================
+      HƯỚNG DẪN CÀI ĐẶT (SETUP) TOOL QUẢN LÝ TÀI KHOẢN
+                   Tái Sinh Ngọc Rồng
+=========================================================
+
+Để sử dụng phần mềm quản lý tài khoản và tối ưu cấu hình đa tab, bạn cần làm đúng theo các bước sau:
+
+Bước 1: Tải và cài đặt MelonLoader
+---------------------------------------------------------
+1. Tải MelonLoader Installer từ trang chủ: https://melonwiki.xyz/#/
+2. Mở MelonLoader Installer lên.
+3. Trong tab "Automated", phần "Unity Game", bấm nút SELECT và trỏ tới file chạy của game: "Tái Sinh Ngọc Rồng.exe" (Trong thư mục game của bạn).
+4. QUAN TRỌNG: Tick chọn "Show ALl". Chọn phiên bản v0.6.6 hoặc cao hơn để tương thích với game Il2Cpp. 
+5. Bấm Install để cài đặt MelonLoader vào game. Khi xong, thư mục game của bạn sẽ xuất hiện folder "MelonLoader" và "Mods".
+
+Bước 2: Cài đặt AutoLoginMod (Code Game)
+---------------------------------------------------------
+1. Lấy file Dll trong thư mục source của tool: `ModProject/AutoLoginMod/bin/Release/net6.0/AutoLoginMod.dll`.
+2. Copy file `AutoLoginMod.dll` này và dán vào thư mục `Mods` bên trong thư mục cài game (thư mục game Tái Sinh Ngọc Rồng).
+  (Nếu bạn dùng bản phân phối có sẵn thư mục TNR_Tool, bạn chỉ cần copy AutoLoginMod.dll từ đó vào thư mục Mods của game).
+
+Bước 3: Gắn Launcher (Tool Quản Lý)
+---------------------------------------------------------
+1. Cóp toàn bộ thư mục `TNR_Tool` (chứa file LauncherApp.exe) đặt ngang hàng với file "Tái Sinh Ngọc Rồng.exe". 
+   -> Cấu trúc đúng phải là:
+      [Thư mục Game]
+         ├── Tái Sinh Ngọc Rồng.exe
+         ├── Tái Sinh Ngọc Rồng_Data/
+         ├── MelonLoader/
+         ├── Mods/
+         │     └── AutoLoginMod.dll
+         └── TNR_Tool/
+               └── LauncherApp.exe
+
+Như vậy là bạn đã cài đặt thành công! Hãy đọc file Hướng dẫn sử dụng để biết cách dùng.

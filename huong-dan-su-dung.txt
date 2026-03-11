@@ -1,0 +1,38 @@
+=========================================================
+       HƯỚNG DẪN SỬ DỤNG TOOL QUẢN LÝ TÀI KHOẢN
+                   Tái Sinh Ngọc Rồng
+=========================================================
+
+Sau khi đã hoàn thành cài đặt (xem file huong-dan-setup.txt), bạn có thể bắt đầu sử dụng Tool bằng cách:
+
+Khởi động Tool:
+---------------------------------------------------------
+1. Mở thư mục TNR_Tool và chạy file "LauncherApp.exe".
+2. Bảng điều khiển sẽ hiện lên.
+
+Cách Thêm / Xóa Tài Khoản:
+---------------------------------------------------------
+- Bấm nút "➕ Thêm" để tạo 1 dòng trống mới. 
+- Click chuột vào cột "Tài Khoản" và "Mật Khẩu" để gõ nick của bạn vào. 
+- Dữ liệu sẽ TỰ ĐỘNG lưu lại (vào file accounts.json) mỗi khi bạn đóng bảng Launcher, bạn không cần nhấn lưu.
+- Nếu muốn xoá 1 hoặc nhiều tài khoản, hãy bôi đen dòng đó (click chuột vào lề trái của dòng) và bấm nút "🗑️ Xóa".
+
+Cách Khởi Động Game (Auto Login):
+---------------------------------------------------------
+Mở Đã Chọn:
+- Chọn 1 hoặc nhiều tài khoản trong danh sách (giữ nút Ctrl hoặc Shift để chọn nhiều dòng).
+- Bấm nút "▶ Mở Đã Chọn". Tool sẽ mở lượng cửa sổ game tương ứng với các acc bạn bôi đen. Game sẽ tự động vào Menu, tự bấm Đổi Tài Khoản, tự điền nick/pass của bạn và vào trong game!
+
+Mở Tất Cả: 
+- Bấm nút "🚀 MỞ TẤT CẢ". Chức năng này sẽ mở toàn bộ các acc có trong bảng của bạn cùng một lúc. Hãy cẩn thận giật lag máy nếu mở quá nhiều tab cùng 1 lúc!
+
+Sử dụng Bảng Điều Khiển Đồ Họa Động (Giảm Lag):
+---------------------------------------------------------
+Tool cung cấp một tính năng cực kì bá đạo: Thay đổi đồ hoạ/Kích cỡ màn hình trực tiếp kể cả khi game đang chạy!
+
+1. Tại phần "Bảng Điều Khiển Đồ Họa Động (Tất Cả Tab)" ở dưới cùng:
+2. Thay đổi các thông số Rộng, Cao (Kích thước cửa sổ) và FPS (Tốc độ khung hình).
+   * Khuyên dùng để treo Máy: Rộng: 400 - Cao: 300 - FPS: 10
+3. Bấm "Áp dụng". 
+4. NGAY LẬP TỨC các cửa sổ game đang mở sẽ được thu bé lại, đồ hoạ sẽ được xoá bỏ hoàn toàn và màn hình được fix không bị lệch hình để giúp CPU/GPU của bạn trống cực kỳ nhiều, dễ dàng treo vài chục tab!
+5. Muốn soi đồ/kiểm tra game: Chỉnh Rộng lên 1024, Cao 600, FPS 60, và bấm "Áp Dụng", các màn hình của tab game sẽ tự động to trở lại bình thường!
