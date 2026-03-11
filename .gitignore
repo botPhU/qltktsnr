@@ -8,7 +8,6 @@ UserLibs/
 dotnet/
 *.exe
 *.dll
-!TNR_Tool/LauncherApp.exe
 !TNR_Tool/AutoLoginMod.dll
 *.log
 

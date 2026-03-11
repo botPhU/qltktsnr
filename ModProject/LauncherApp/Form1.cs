@@ -6,343 +6,312 @@ using System.Drawing.Drawing2D;
 using System.IO;
 using System.Text.Json;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace LauncherApp
 {
     public partial class Form1 : Form
     {
-        private DataGridView dgvAccounts;
-        private Button btnLaunchSelected;
-        private Button btnLaunchAll;
-        private Button btnAddRow;
-        private Button btnDeleteRow;
-
-        // Settings controls
-        private CheckBox chkOptimize;
-        private Label lblWidth;
-        private Label lblHeight;
-        private Label lblFps;
-        private NumericUpDown numWidth;
-        private NumericUpDown numHeight;
-        private NumericUpDown numFps;
-        private GroupBox grpSettings;
+        // === UI COMPONENTS ===
+        private Panel pnlSidebar;
+        private Panel pnlMainContent;
+        private Panel pnlDashboard;
+        private Panel pnlAccounts;
+        private Panel pnlOpti;
         private Label lblStatus;
+        private DataGridView dgvAccounts;
+        
+        // Opti Controls
+        private CheckBox chkOptimize;
+        private NumericUpDown numFps;
+        private ComboBox cboSize;
+        
+        // Navigation Buttons
+        private Button btnNavDash;
+        private Button btnNavAccs;
+        private Button btnNavOpti;
 
+        // === CONFIG ===
         private string GamePath = @"..\Tái Sinh Ngọc Rồng.exe";
         private string ConfigPath = "accounts.json";
 
-        // Bảng màu Dark Theme
-        private Color bgDark = Color.FromArgb(30, 30, 46);
-        private Color bgPanel = Color.FromArgb(45, 45, 65);
-        private Color accentColor = Color.FromArgb(137, 180, 250);
-        private Color accentHover = Color.FromArgb(116, 160, 230);
-        private Color textColor = Color.FromArgb(205, 214, 244);
-        private Color dangerColor = Color.FromArgb(243, 139, 168);
-        private Color successColor = Color.FromArgb(166, 227, 161);
-        private Color borderColor = Color.FromArgb(88, 91, 112);
+        // === PREMIUM PALETTE (Catppuccin Mocha inspired) ===
+        private Color clrBase = Color.FromArgb(24, 24, 37);
+        private Color clrSurface0 = Color.FromArgb(49, 50, 68);
+        private Color clrSurface1 = Color.FromArgb(69, 71, 90);
+        private Color clrOverlay = Color.FromArgb(108, 112, 134);
+        private Color clrBlue = Color.FromArgb(137, 180, 250);
+        private Color clrMauve = Color.FromArgb(198, 160, 246);
+        private Color clrGreen = Color.FromArgb(166, 227, 161);
+        private Color clrRed = Color.FromArgb(243, 139, 168);
+        private Color clrPeach = Color.FromArgb(250, 179, 135);
+        private Color clrText = Color.FromArgb(205, 214, 244);
+        private Color clrSubtext = Color.FromArgb(166, 173, 200);
 
         public Form1()
         {
             InitializeComponent();
-            SetupUI();
+            SetupModernUI();
             LoadAccounts();
+            SwitchTab("Accounts"); // Default tab
         }
 
-        private Button CreateStyledButton(string text, Color bgColor, int x, int y, int w, int h)
+        private void SetupModernUI()
         {
-            var btn = new Button
-            {
-                Text = text,
-                Location = new Point(x, y),
-                Size = new Size(w, h),
-                FlatStyle = FlatStyle.Flat,
-                BackColor = bgColor,
-                ForeColor = Color.White,
-                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
-                Cursor = Cursors.Hand
-            };
-            btn.FlatAppearance.BorderColor = bgColor;
-            btn.FlatAppearance.BorderSize = 0;
-            btn.FlatAppearance.MouseOverBackColor = ControlPaint.Dark(bgColor, 0.1f);
-            btn.FlatAppearance.MouseDownBackColor = ControlPaint.Dark(bgColor, 0.2f);
+            this.Text = "Dragon Manager Premium v5.0";
+            this.Size = new Size(850, 600);
+            this.StartPosition = FormStartPosition.CenterScreen;
+            this.BackColor = clrBase;
+            this.ForeColor = clrText;
+            this.Font = new Font("Segoe UI Semibold", 10f);
+            this.FormBorderStyle = FormBorderStyle.FixedSingle;
+            this.MaximizeBox = false;
+
+            // --- SIDEBAR ---
+            pnlSidebar = new Panel { Width = 200, Dock = DockStyle.Left, BackColor = Color.FromArgb(30, 30, 46) };
             
-            // Bo tròn góc
-            btn.Region = new Region(CreateRoundedRect(new Rectangle(0, 0, w, h), 8));
+            var lblLogo = new Label { 
+                Text = "DRACO\nMANAGER", 
+                Font = new Font("Segoe UI Black", 18f), 
+                ForeColor = clrBlue, 
+                Location = new Point(20, 20), 
+                Size = new Size(160, 70),
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+
+            btnNavDash = CreateNavButton("📊 Dashboard", 100);
+            btnNavDash.Click += (s, e) => SwitchTab("Dash");
+
+            btnNavAccs = CreateNavButton("👥 Accounts", 150);
+            btnNavAccs.Click += (s, e) => SwitchTab("Accounts");
+
+            btnNavOpti = CreateNavButton("⚙️ Optimization", 200);
+            btnNavOpti.Click += (s, e) => SwitchTab("Opti");
+
+            var lblVersion = new Label { 
+                Text = "v5.0 Premium Edition", 
+                Font = new Font("Segoe UI", 8f, FontStyle.Italic), 
+                ForeColor = clrOverlay, 
+                Dock = DockStyle.Bottom, 
+                TextAlign = ContentAlignment.MiddleCenter, 
+                Height = 30 
+            };
+
+            pnlSidebar.Controls.AddRange(new Control[] { lblLogo, btnNavDash, btnNavAccs, btnNavOpti, lblVersion });
+
+            // --- MAIN CONTENT CONTAINER ---
+            pnlMainContent = new Panel { Dock = DockStyle.Fill, Padding = new Padding(20) };
+            
+            lblStatus = new Label { 
+                Text = "Ready.", 
+                Dock = DockStyle.Bottom, 
+                Height = 30, 
+                ForeColor = clrSubtext, 
+                Font = new Font("Segoe UI", 9f, FontStyle.Italic),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+
+            SetupDashboard();
+            SetupAccountsTab();
+            SetupOptiTab();
+
+            this.Controls.Add(pnlMainContent);
+            this.Controls.Add(pnlSidebar);
+            this.Controls.Add(lblStatus);
+            this.FormClosing += (s, e) => SaveAccounts();
+        }
+
+        private void SetupDashboard()
+        {
+            pnlDashboard = new Panel { Dock = DockStyle.Fill, Visible = false };
+            var lblTitle = new Label { Text = "DASHBOARD", Font = new Font("Segoe UI", 20f, FontStyle.Bold), ForeColor = clrPeach, Location = new Point(0, 0), AutoSize = true };
+            
+            var pnlStats = new Panel { Location = new Point(0, 50), Size = new Size(600, 150), BackColor = clrSurface0 };
+            pnlStats.Region = new Region(CreateRoundedRect(new Rectangle(0, 0, 600, 150), 15));
+            
+            var lblTabCount = new Label { Text = "Tabs Active: 0", Location = new Point(20, 20), AutoSize = true, Font = new Font("Segoe UI", 12f), ForeColor = clrBlue };
+            var lblRam = new Label { Text = "Managed Accounts: 0", Location = new Point(20, 50), AutoSize = true, Font = new Font("Segoe UI", 12f), ForeColor = clrMauve };
+            
+            pnlStats.Controls.AddRange(new Control[] { lblTabCount, lblRam });
+            
+            var btnQuickFix = CreateActionBtn("Quick Reset Graphics", clrRed, 0, 220, 200, 45);
+            btnQuickFix.Click += (s, e) => ApplySettings(false);
+
+            pnlDashboard.Controls.AddRange(new Control[] { lblTitle, pnlStats, btnQuickFix });
+            pnlMainContent.Controls.Add(pnlDashboard);
+        }
+
+        private void SetupAccountsTab()
+        {
+            pnlAccounts = new Panel { Dock = DockStyle.Fill, Visible = false };
+            var lblTitle = new Label { Text = "ACCOUNT MANAGER", Font = new Font("Segoe UI", 20f, FontStyle.Bold), ForeColor = clrBlue, Location = new Point(0, 0), AutoSize = true };
+
+            dgvAccounts = new DataGridView { 
+                Location = new Point(0, 50), Size = new Size(580, 320), 
+                ColumnCount = 2, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill, 
+                AllowUserToAddRows = false, SelectionMode = DataGridViewSelectionMode.FullRowSelect, 
+                BackgroundColor = clrSurface0, GridColor = clrBase, BorderStyle = BorderStyle.None,
+                RowHeadersVisible = false, EnableHeadersVisualStyles = false,
+                ColumnHeadersHeight = 40
+            };
+            dgvAccounts.Columns[0].Name = "Username";
+            dgvAccounts.Columns[1].Name = "Password";
+            dgvAccounts.DefaultCellStyle = new DataGridViewCellStyle { BackColor = clrSurface0, ForeColor = clrText, SelectionBackColor = clrSurface1, SelectionForeColor = Color.White };
+            dgvAccounts.ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle { BackColor = clrSurface1, ForeColor = clrBlue, Font = new Font("Segoe UI", 10f, FontStyle.Bold) };
+
+            var btnAdd = CreateActionBtn("➕ Add", clrGreen, 0, 385, 100, 40);
+            btnAdd.Click += (s, e) => dgvAccounts.Rows.Add("", "");
+
+            var btnDel = CreateActionBtn("🗑️ Delete", clrRed, 110, 385, 100, 40);
+            btnDel.Click += (s, e) => { foreach (DataGridViewRow r in dgvAccounts.SelectedRows) if (!r.IsNewRow) dgvAccounts.Rows.Remove(r); };
+
+            var btnPlaySelect = CreateActionBtn("▶ LAUNCH SELECTED", clrBlue, 220, 385, 180, 40);
+            btnPlaySelect.Click += (s, e) => { foreach (DataGridViewRow r in dgvAccounts.SelectedRows) LaunchGame(r.Cells[0].Value?.ToString(), r.Cells[1].Value?.ToString()); };
+
+            var btnPlayAll = CreateActionBtn("🚀 LAUNCH ALL", clrMauve, 410, 385, 180, 40);
+            btnPlayAll.Click += (s, e) => { foreach (DataGridViewRow r in dgvAccounts.Rows) if (!r.IsNewRow) LaunchGame(r.Cells[0].Value?.ToString(), r.Cells[1].Value?.ToString()); };
+
+            pnlAccounts.Controls.AddRange(new Control[] { lblTitle, dgvAccounts, btnAdd, btnDel, btnPlaySelect, btnPlayAll });
+            pnlMainContent.Controls.Add(pnlAccounts);
+        }
+
+        private void SetupOptiTab()
+        {
+            pnlOpti = new Panel { Dock = DockStyle.Fill, Visible = false };
+            var lblTitle = new Label { Text = "OPTIMIZATION CENTER", Font = new Font("Segoe UI", 20f, FontStyle.Bold), ForeColor = clrMauve, Location = new Point(0, 0), AutoSize = true };
+
+            var grp = new Panel { Location = new Point(0, 60), Size = new Size(580, 200), BackColor = clrSurface0 };
+            grp.Region = new Region(CreateRoundedRect(new Rectangle(0, 0, 580, 200), 15));
+
+            chkOptimize = new CheckBox { Text = "Ultra Low Graphics & FPS Lock", Location = new Point(30, 30), AutoSize = true, ForeColor = clrText, Checked = true };
+            
+            var lblS = new Label { Text = "Resolution Size:", Location = new Point(30, 80), AutoSize = true, ForeColor = clrSubtext };
+            cboSize = new ComboBox { Location = new Point(160, 76), Size = new Size(150, 30), DropDownStyle = ComboBoxStyle.DropDownList, BackColor = clrBase, ForeColor = clrText };
+            cboSize.Items.AddRange(new string[] { "100x75", "200x150", "300x225", "400x300", "600x450" });
+            cboSize.SelectedIndex = 3;
+
+            var lblF = new Label { Text = "Background FPS:", Location = new Point(30, 130), AutoSize = true, ForeColor = clrSubtext };
+            numFps = new NumericUpDown { Location = new Point(160, 126), Size = new Size(80, 30), Minimum = 5, Maximum = 60, Value = 15, BackColor = clrBase, ForeColor = clrText };
+
+            grp.Controls.AddRange(new Control[] { chkOptimize, lblS, cboSize, lblF, numFps });
+
+            var btnApply = CreateActionBtn("⚡ APPLY TO ALL TABS", clrPeach, 0, 280, 280, 50);
+            btnApply.Click += (s, e) => ApplySettings(true);
+
+            var btnReset = CreateActionBtn("🔄 RESTORE DEFAULTS", clrGreen, 300, 280, 280, 50);
+            btnReset.Click += (s, e) => ApplySettings(false);
+
+            pnlOpti.Controls.AddRange(new Control[] { lblTitle, grp, btnApply, btnReset });
+            pnlMainContent.Controls.Add(pnlOpti);
+        }
+
+        // === HELPERS ===
+        private Button CreateNavButton(string text, int y)
+        {
+            var btn = new Button {
+                Text = text, Location = new Point(10, y), Size = new Size(180, 45),
+                FlatStyle = FlatStyle.Flat, BackColor = Color.Transparent, ForeColor = clrSubtext,
+                Font = new Font("Segoe UI Semibold", 10f), TextAlign = ContentAlignment.MiddleLeft,
+                Padding = new Padding(15, 0, 0, 0), Cursor = Cursors.Hand
+            };
+            btn.FlatAppearance.BorderSize = 0;
+            btn.FlatAppearance.MouseOverBackColor = clrSurface0;
+            btn.FlatAppearance.MouseDownBackColor = clrSurface1;
+            btn.MouseEnter += (s, e) => btn.ForeColor = clrBlue;
+            btn.MouseLeave += (s, e) => { if (!((Panel)pnlMainContent.Controls.Cast<Control>().First(c => c.Visible)).Name.Contains(text.Split(' ')[1])) btn.ForeColor = clrSubtext; };
             return btn;
+        }
+
+        private Button CreateActionBtn(string text, Color clr, int x, int y, int w, int h)
+        {
+            var btn = new Button {
+                Text = text, Location = new Point(x, y), Size = new Size(w, h),
+                FlatStyle = FlatStyle.Flat, BackColor = clr, ForeColor = clrBase,
+                Font = new Font("Segoe UI Bold", 9.5f), Cursor = Cursors.Hand
+            };
+            btn.FlatAppearance.BorderSize = 0;
+            btn.Region = new Region(CreateRoundedRect(new Rectangle(0, 0, w, h), 10));
+            return btn;
+        }
+
+        private void SwitchTab(string tab)
+        {
+            pnlDashboard.Visible = (tab == "Dash");
+            pnlAccounts.Visible = (tab == "Accounts");
+            pnlOpti.Visible = (tab == "Opti");
+            
+            btnNavDash.ForeColor = (tab == "Dash") ? clrBlue : clrSubtext;
+            btnNavAccs.ForeColor = (tab == "Accounts") ? clrBlue : clrSubtext;
+            btnNavOpti.ForeColor = (tab == "Opti") ? clrBlue : clrSubtext;
+
+            btnNavDash.BackColor = (tab == "Dash") ? clrSurface0 : Color.Transparent;
+            btnNavAccs.BackColor = (tab == "Accounts") ? clrSurface0 : Color.Transparent;
+            btnNavOpti.BackColor = (tab == "Opti") ? clrSurface0 : Color.Transparent;
         }
 
         private GraphicsPath CreateRoundedRect(Rectangle bounds, int radius)
         {
             var path = new GraphicsPath();
-            path.AddArc(bounds.X, bounds.Y, radius * 2, radius * 2, 180, 90);
-            path.AddArc(bounds.Right - radius * 2, bounds.Y, radius * 2, radius * 2, 270, 90);
-            path.AddArc(bounds.Right - radius * 2, bounds.Bottom - radius * 2, radius * 2, radius * 2, 0, 90);
-            path.AddArc(bounds.X, bounds.Bottom - radius * 2, radius * 2, radius * 2, 90, 90);
+            var d = radius * 2;
+            path.AddArc(bounds.X, bounds.Y, d, d, 180, 90);
+            path.AddArc(bounds.Right - d, bounds.Y, d, d, 270, 90);
+            path.AddArc(bounds.Right - d, bounds.Bottom - d, d, d, 0, 90);
+            path.AddArc(bounds.X, bounds.Bottom - d, d, d, 90, 90);
             path.CloseFigure();
             return path;
         }
 
-        private Button btnApplySettings;
-
-        // ...
-
-        private void SetupUI()
+        // === LOGIC (REUSED FROM v4.0) ===
+        private void LaunchGame(string u, string p)
         {
-            this.Text = "🐉 Tái Sinh Ngọc Rồng - AutoLogin Tool v3.0";
-            this.Size = new Size(700, 560);
-            this.StartPosition = FormStartPosition.CenterScreen;
-            this.BackColor = bgDark;
-            this.ForeColor = textColor;
-            this.Font = new Font("Segoe UI", 10f);
-            this.FormBorderStyle = FormBorderStyle.FixedSingle;
-            this.MaximizeBox = false;
-
-            // ... (Title and DataGridView setup unchanged)
-            var lblTitle = new Label { Text = "🐉 TNR Auto Login Manager", Font = new Font("Segoe UI", 16f, FontStyle.Bold), ForeColor = accentColor, Location = new Point(15, 10), AutoSize = true };
-
-            dgvAccounts = new DataGridView { Location = new Point(15, 50), Size = new Size(650, 260), ColumnCount = 2, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill, AllowUserToAddRows = false, SelectionMode = DataGridViewSelectionMode.FullRowSelect, BackgroundColor = bgPanel, GridColor = borderColor, BorderStyle = BorderStyle.None, RowHeadersVisible = false, EnableHeadersVisualStyles = false, DefaultCellStyle = new DataGridViewCellStyle { BackColor = bgPanel, ForeColor = textColor, SelectionBackColor = Color.FromArgb(60, 60, 90), SelectionForeColor = Color.White, Font = new Font("Segoe UI", 10f) }, ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle { BackColor = Color.FromArgb(55, 55, 80), ForeColor = accentColor, Font = new Font("Segoe UI", 10f, FontStyle.Bold), Alignment = DataGridViewContentAlignment.MiddleCenter } };
-            dgvAccounts.Columns[0].Name = "Tài Khoản"; dgvAccounts.Columns[1].Name = "Mật Khẩu";
-
-            btnAddRow = CreateStyledButton("➕ Thêm", accentColor, 15, 320, 100, 38);
-            btnAddRow.Click += (s, e) => dgvAccounts.Rows.Add("", "");
-
-            btnDeleteRow = CreateStyledButton("🗑️ Xóa", dangerColor, 125, 320, 100, 38);
-            btnDeleteRow.Click += BtnDeleteRow_Click;
-
-            btnLaunchSelected = CreateStyledButton("▶ Mở Đã Chọn", Color.FromArgb(116, 199, 236), 245, 320, 155, 38);
-            btnLaunchSelected.Click += BtnLaunchSelected_Click;
-
-            btnLaunchAll = CreateStyledButton("🚀 MỞ TẤT CẢ", successColor, 410, 320, 155, 38);
-            btnLaunchAll.ForeColor = Color.FromArgb(30, 30, 46);
-            btnLaunchAll.Click += BtnLaunchAll_Click;
-
-            // === PANEL CÀI ĐẶT TỐI ƯU THỜI GIAN THỰC ===
-            grpSettings = new GroupBox
-            {
-                Text = "⚙️  Bảng Điều Khiển Đồ Họa Động (Tất Cả Tab)",
-                Location = new Point(15, 370),
-                Size = new Size(650, 100),
-                ForeColor = accentColor,
-                Font = new Font("Segoe UI", 10f, FontStyle.Bold),
-                BackColor = bgPanel
-            };
-
-            chkOptimize = new CheckBox
-            {
-                Text = "  Giảm cấu hình & thu nhỏ màn hình",
-                Location = new Point(15, 30),
-                AutoSize = true,
-                ForeColor = textColor,
-                Font = new Font("Segoe UI", 9.5f),
-                Checked = true
-            };
-            chkOptimize.CheckedChanged += ChkOptimize_Changed;
-
-            lblWidth = new Label { Text = "Rộng:", Location = new Point(15, 62), AutoSize = true, ForeColor = textColor, Font = new Font("Segoe UI", 9f) };
-            numWidth = new NumericUpDown
-            {
-                Location = new Point(65, 58), Size = new Size(70, 28),
-                Minimum = 100, Maximum = 1920, Value = 400,
-                BackColor = bgDark, ForeColor = textColor
-            };
-
-            lblHeight = new Label { Text = "Cao:", Location = new Point(145, 62), AutoSize = true, ForeColor = textColor, Font = new Font("Segoe UI", 9f) };
-            numHeight = new NumericUpDown
-            {
-                Location = new Point(185, 58), Size = new Size(70, 28),
-                Minimum = 75, Maximum = 1080, Value = 300,
-                BackColor = bgDark, ForeColor = textColor
-            };
-
-            lblFps = new Label { Text = "FPS:", Location = new Point(270, 62), AutoSize = true, ForeColor = textColor, Font = new Font("Segoe UI", 9f) };
-            numFps = new NumericUpDown
-            {
-                Location = new Point(310, 58), Size = new Size(60, 28),
-                Minimum = 5, Maximum = 60, Value = 15,
-                BackColor = bgDark, ForeColor = textColor
-            };
-
-            btnApplySettings = CreateStyledButton("Áp dụng", Color.FromArgb(249, 226, 175), 380, 48, 100, 35);
-            btnApplySettings.ForeColor = bgDark;
-            btnApplySettings.Click += BtnApplySettings_Click;
-
-            var lblNote2 = new Label
-            {
-                Text = "Click 'Áp dụng' -> Game tự đổi size!",
-                Location = new Point(490, 58),
-                AutoSize = true,
-                ForeColor = Color.FromArgb(150, 160, 180),
-                Font = new Font("Segoe UI", 8f, FontStyle.Italic)
-            };
-
-            grpSettings.Controls.AddRange(new Control[] { chkOptimize, lblWidth, numWidth, lblHeight, numHeight, lblFps, numFps, btnApplySettings, lblNote2 });
-
-            // === STATUS BAR ===
-            lblStatus = new Label
-            {
-                Text = "Sẵn sàng.",
-                Location = new Point(15, 480),
-                Size = new Size(650, 25),
-                ForeColor = Color.FromArgb(150, 160, 180),
-                Font = new Font("Segoe UI", 8.5f, FontStyle.Italic)
-            };
-
-            // Add all controls
-            this.Controls.AddRange(new Control[] { lblTitle, dgvAccounts, btnAddRow, btnDeleteRow, btnLaunchSelected, btnLaunchAll, grpSettings, lblStatus });
-            this.FormClosing += Form1_FormClosing;
+            if (string.IsNullOrEmpty(u) || !File.Exists(GamePath)) return;
+            try {
+                string args = $"--user \"{u}\" --pass \"{p}\"";
+                if (chkOptimize.Checked) {
+                    string[] s = cboSize.Text.Split('x');
+                    args += $" --optimize --width {s[0]} --height {s[1]} --fps {(int)numFps.Value}";
+                }
+                Process.Start(new ProcessStartInfo { FileName = GamePath, Arguments = args, WorkingDirectory = Path.GetDirectoryName(Path.GetFullPath(GamePath)) });
+                UpdateStatus($"Successfully launched: {u}", clrGreen);
+            } catch (Exception ex) { MessageBox.Show(ex.Message); }
         }
 
-        private void BtnApplySettings_Click(object sender, EventArgs e)
+        private void ApplySettings(bool opti)
         {
-            try
-            {
-                // Thư mục chứa game
-                string targetPath = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(GamePath)), "Mods", "AutoLoginMod_Settings.json");
-                
-                var config = new Dictionary<string, object>
-                {
-                    { "Optimize", chkOptimize.Checked },
-                    { "Width", (int)numWidth.Value },
-                    { "Height", (int)numHeight.Value },
-                    { "Fps", (int)numFps.Value }
+            try {
+                int w = 1024, h = 600;
+                if (opti) {
+                    string[] s = cboSize.Text.Split('x');
+                    w = int.Parse(s[0]); h = int.Parse(s[1]);
+                }
+                string path = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(GamePath)), "Mods", "AutoLoginMod_Settings.json");
+                var cfg = new Dictionary<string, object> {
+                    { "Optimize", opti && chkOptimize.Checked }, { "Width", w }, { "Height", h },
+                    { "Fps", (opti && chkOptimize.Checked) ? (int)numFps.Value : 60 }
                 };
-
-                File.WriteAllText(targetPath, JsonSerializer.Serialize(config));
-                
-                lblStatus.Text = $"✅ Đã gửi lệnh thay đổi cài đặt đến tất cả các tab! ({DateTime.Now:HH:mm:ss})";
-                lblStatus.ForeColor = successColor;
-            }
-            catch (Exception ex)
-            {
-                lblStatus.Text = "⚠️ Lỗi khi lưu cài đặt: " + ex.Message;
-                lblStatus.ForeColor = dangerColor;
-            }
+                File.WriteAllText(path, JsonSerializer.Serialize(cfg));
+                UpdateStatus($"Applied {(opti ? "Optimization" : "Default")} to all tabs", opti ? clrPeach : clrGreen);
+            } catch (Exception ex) { UpdateStatus("Error: " + ex.Message, clrRed); }
         }
 
-        private void ChkOptimize_Changed(object sender, EventArgs e)
-        {
-            bool enabled = chkOptimize.Checked;
-            numWidth.Enabled = enabled;
-            numHeight.Enabled = enabled;
-            numFps.Enabled = enabled;
+        private void UpdateStatus(string msg, Color c) { lblStatus.Text = $"[{DateTime.Now:HH:mm:ss}] {msg}"; lblStatus.ForeColor = c; }
+
+        private void LoadAccounts() {
+            if (!File.Exists(ConfigPath)) return;
+            try {
+                var accs = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(File.ReadAllText(ConfigPath));
+                foreach (var a in accs) dgvAccounts.Rows.Add(a["User"], a["Pass"]);
+            } catch { }
         }
 
-        private void LoadAccounts()
-        {
-            if (File.Exists(ConfigPath))
-            {
-                try
-                {
-                    string json = File.ReadAllText(ConfigPath);
-                    var accs = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(json);
-                    foreach (var acc in accs)
-                    {
-                        dgvAccounts.Rows.Add(acc["User"], acc["Pass"]);
-                    }
-                }
-                catch { }
+        private void SaveAccounts() {
+            var list = new List<Dictionary<string, string>>();
+            foreach (DataGridViewRow r in dgvAccounts.Rows) {
+                if (r.IsNewRow) continue;
+                var u = r.Cells[0].Value?.ToString() ?? "";
+                if (!string.IsNullOrEmpty(u)) list.Add(new Dictionary<string, string> { { "User", u }, { "Pass", r.Cells[1].Value?.ToString() ?? "" } });
             }
-        }
-
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            var accs = new List<Dictionary<string, string>>();
-            foreach (DataGridViewRow row in dgvAccounts.Rows)
-            {
-                if (row.IsNewRow) continue;
-                var u = row.Cells[0].Value?.ToString() ?? "";
-                var p = row.Cells[1].Value?.ToString() ?? "";
-                if (!string.IsNullOrEmpty(u))
-                {
-                    accs.Add(new Dictionary<string, string> { { "User", u }, { "Pass", p } });
-                }
-            }
-            File.WriteAllText(ConfigPath, JsonSerializer.Serialize(accs));
-        }
-
-        private void LaunchGame(string user, string pass)
-        {
-            if (!File.Exists(GamePath))
-            {
-                MessageBox.Show("Không tìm thấy file game:\n" + Path.GetFullPath(GamePath) + "\n\nHãy đảm bảo thư mục TNR_Tool nằm cạnh file game.",
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-            try
-            {
-                string arguments = $"--user \"{user}\" --pass \"{pass}\"";
-
-                // Thêm tham số tối ưu hóa nếu được bật
-                if (chkOptimize.Checked)
-                {
-                    arguments += $" --optimize --width {(int)numWidth.Value} --height {(int)numHeight.Value} --fps {(int)numFps.Value}";
-                }
-
-                ProcessStartInfo startInfo = new ProcessStartInfo
-                {
-                    FileName = GamePath,
-                    Arguments = arguments,
-                    WorkingDirectory = Path.GetDirectoryName(Path.GetFullPath(GamePath))
-                };
-                Process.Start(startInfo);
-                lblStatus.Text = $"✅ Đã mở game cho tài khoản: {user}  |  {DateTime.Now:HH:mm:ss}";
-                lblStatus.ForeColor = successColor;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Lỗi mở game: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void BtnDeleteRow_Click(object sender, EventArgs e)
-        {
-            if (dgvAccounts.SelectedRows.Count > 0)
-            {
-                foreach (DataGridViewRow row in dgvAccounts.SelectedRows)
-                {
-                    if (!row.IsNewRow)
-                        dgvAccounts.Rows.Remove(row);
-                }
-            }
-        }
-
-        private void BtnLaunchSelected_Click(object sender, EventArgs e)
-        {
-            int count = 0;
-            foreach (DataGridViewRow row in dgvAccounts.SelectedRows)
-            {
-                var u = row.Cells[0].Value?.ToString();
-                var p = row.Cells[1].Value?.ToString();
-                if (!string.IsNullOrEmpty(u))
-                {
-                    LaunchGame(u, p);
-                    count++;
-                }
-            }
-            if (count == 0)
-            {
-                lblStatus.Text = "⚠️ Chưa chọn tài khoản nào.";
-                lblStatus.ForeColor = Color.FromArgb(249, 226, 175);
-            }
-        }
-
-        private void BtnLaunchAll_Click(object sender, EventArgs e)
-        {
-            int count = 0;
-            foreach (DataGridViewRow row in dgvAccounts.Rows)
-            {
-                if (row.IsNewRow) continue;
-                var u = row.Cells[0].Value?.ToString();
-                var p = row.Cells[1].Value?.ToString();
-                if (!string.IsNullOrEmpty(u))
-                {
-                    LaunchGame(u, p);
-                    count++;
-                }
-            }
-            lblStatus.Text = $"🚀 Đã mở {count} tài khoản  |  {DateTime.Now:HH:mm:ss}";
-            lblStatus.ForeColor = successColor;
+            File.WriteAllText(ConfigPath, JsonSerializer.Serialize(list));
         }
     }
 }

@@ -215,7 +215,7 @@ namespace AutoLoginMod
             }
         }
 
-        private DateTime lastConfigWriteTime = DateTime.MinValue;
+        private DateTime lastConfigWriteTime = DateTime.Now;
 
         private void CheckAndApplySettings()
         {
