@@ -1,35 +1,50 @@
 =========================================================
-      HƯỚNG DẪN CÀI ĐẶT (SETUP) TOOL QUẢN LÝ TÀI KHOẢN
-                   Tái Sinh Ngọc Rồng
+       DEVELOPER SETUP GUIDE & ARCHITECTURE OVERVIEW
+                   Tái Sinh Ngọc Rồng Auto Tool
 =========================================================
 
-Để sử dụng phần mềm quản lý tài khoản và tối ưu cấu hình đa tab, bạn cần làm đúng theo các bước sau:
+Để tiếp tục phát triển (contribute) cho dự án này, bạn cần hiểu rõ kiến trúc 2 phần (IPC) và cách thiết lập môi trường build IL2CPP.
 
-Bước 1: Tải và cài đặt MelonLoader
+1. YÊU CẦU MÔI TRƯỜNG
 ---------------------------------------------------------
-1. Tải MelonLoader Installer từ trang chủ: https://melonwiki.xyz/#/
-2. Mở MelonLoader Installer lên.
-3. Trong tab "Automated", phần "Unity Game", bấm nút SELECT và trỏ tới file chạy của game: "Tái Sinh Ngọc Rồng.exe" (Trong thư mục game của bạn).
-4. QUAN TRỌNG: Tick chọn "Show ALl". Chọn phiên bản v0.6.6 hoặc cao hơn để tương thích với game Il2Cpp. 
-5. Bấm Install để cài đặt MelonLoader vào game. Khi xong, thư mục game của bạn sẽ xuất hiện folder "MelonLoader" và "Mods".
+- Visual Studio 2022 (khuyên dùng) hoặc Rider.
+- .NET 6.0 SDK (để build AutoLoginMod) và .NET 8.0 SDK (để build LauncherApp).
+- Game "Tái Sinh Ngọc Rồng" (Bản PC Windows).
 
-Bước 2: Cài đặt AutoLoginMod (Code Game)
+2. SETUP MELONLOADER VÀ DUMMY DLLs (IL2CPP)
 ---------------------------------------------------------
-1. Lấy file Dll trong thư mục source của tool: `ModProject/AutoLoginMod/bin/Release/net6.0/AutoLoginMod.dll`.
-2. Copy file `AutoLoginMod.dll` này và dán vào thư mục `Mods` bên trong thư mục cài game (thư mục game Tái Sinh Ngọc Rồng).
-  (Nếu bạn dùng bản phân phối có sẵn thư mục TNR_Tool, bạn chỉ cần copy AutoLoginMod.dll từ đó vào thư mục Mods của game).
+Game được Build bằng Unity IL2CPP, vì vậy mã nguồn C# đã bị biên dịch thành C++ (GameAssembly.dll). Để gọi được các hàm C# của game, ta cần dùng Il2CppInterop thông qua MelonLoader.
 
-Bước 3: Gắn Launcher (Tool Quản Lý)
+B1. Tải MelonLoader Installer từ melonwiki.xyz.
+B2. Cài đặt vào file "Tái Sinh Ngọc Rồng.exe" (Chọn bản v0.6.6 hoặc cao hơn).
+B3. Chạy game lần đầu tiên bằng MelonLoader. Nó sẽ tự động dump ra các DummyDlls (Tạo ra thư viện giả lập chứa các Header class C# của game từ metadata v31).
+B4. Thư mục `MelonLoader/DummyDlls` (hoặc `MelonLoader/net6/Il2CppAssemblies`) sẽ chứa file `Assembly-CSharp.dll` cực kỳ quan trọng.
+
+3. CẤU TRÚC REPOSITORY (SOURCE CODE)
 ---------------------------------------------------------
-1. Cóp toàn bộ thư mục `TNR_Tool` (chứa file LauncherApp.exe) đặt ngang hàng với file "Tái Sinh Ngọc Rồng.exe". 
-   -> Cấu trúc đúng phải là:
-      [Thư mục Game]
-         ├── Tái Sinh Ngọc Rồng.exe
-         ├── Tái Sinh Ngọc Rồng_Data/
-         ├── MelonLoader/
-         ├── Mods/
-         │     └── AutoLoginMod.dll
-         └── TNR_Tool/
-               └── LauncherApp.exe
+Repo này chứa 2 project chính:
 
-Như vậy là bạn đã cài đặt thành công! Hãy đọc file Hướng dẫn sử dụng để biết cách dùng.
+a) ModProject/AutoLoginMod (The Payload)
+- Là một Class Library (.NET 6.0).
+- Tham chiếu đến các file trong thư mục cài MelonLoader của bạn:
+  * MelonLoader.dll
+  * Il2CppInterop.Runtime.dll
+  * Il2CppSystem.dll
+  * UnityEngine.CoreModule.dll
+  * Assembly-CSharp.dll (File của game vừa dump ra ở Bước 2).
+- Nhiệm vụ:
+  + Hook vào màn hình GameCanvas.
+  + Đọc file `Mods/AutoLoginMod_Settings.json`.
+  + Ghi đè chỉ số cấu hình (`Screen.SetResolution`, `Application.targetFrameRate`, `GameCanvas.w/h`).
+- Khi phát triển xong, build ra `AutoLoginMod.dll` và bỏ vào thư mục `Mods` của Game.
+
+b) ModProject/LauncherApp (The Controller)
+- Là một Windows Forms App (.NET 8.0).
+- Nhiệm vụ: Giao diện quản lý danh sách nick, khởi chạy tiến trình `Process.Start` truyền arguments `--user --pass`.
+- Ghi các thông số tối ưu vào file `AutoLoginMod_Settings.json` để Mod đọc (chuẩn IPC).
+
+4. LƯU Ý KHI DEV / DEBUG
+---------------------------------------------------------
+- File Assembly-CSharp.dll có cấu trúc thay đổi tùy theo bản update của game. Nếu game update, bạn cần xóa thư mục MelonLoader và cài lại để lấy Assembly-CSharp.dll mới nhất.
+- Đôi khi Il2CppInterop sẽ không phân giải được namespace `Main`. Hãy khai báo tường minh `Il2Cpp.Main` thay vì `Main` để tránh nhầm với `MelonLoader.Main`.
+- Không tạo vòng lặp vô tận (while loop) bên trong luồng `OnUpdate` của MelonLoader vì nó chạy trên Main Thread của Unity, sẽ gây treo game. Dùng `Time.time` để đếm giây.

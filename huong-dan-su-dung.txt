@@ -1,38 +1,40 @@
 =========================================================
-       HƯỚNG DẪN SỬ DỤNG TOOL QUẢN LÝ TÀI KHOẢN
-                   Tái Sinh Ngọc Rồng
+            DEVELOPER DEVELOPMENT & IPC GUIDE
+                   Tái Sinh Ngọc Rồng Auto Tool
 =========================================================
 
-Sau khi đã hoàn thành cài đặt (xem file huong-dan-setup.txt), bạn có thể bắt đầu sử dụng Tool bằng cách:
+Tài liệu này giải thích luồng hoạt động nội bộ của code để Dev mới có thể đọc hiểu và phát triển thêm các tính năng In-game (Auto đánh quái, nhặt đồ...).
 
-Khởi động Tool:
+1. LUỒNG ĐĂNG NHẬP (AUTO LOGIN FLOW)
 ---------------------------------------------------------
-1. Mở thư mục TNR_Tool và chạy file "LauncherApp.exe".
-2. Bảng điều khiển sẽ hiện lên.
+(Xem file: `AutoLoginMod.cs`)
 
-Cách Thêm / Xóa Tài Khoản:
+Game xử lý UI thông qua biến tĩnh (static). Mod sẽ can thiệp trực tiếp vào bộ nhớ để trigger:
+B1. Đọc user/pass từ tham số dòng lệnh do Launcher truyền vào: `Environment.GetCommandLineArgs()`.
+B2. Chờ cho màn hình `ServerListScreen` hiển thị. Tìm nút "Đổi tài khoản" (thông qua mảng `serverScr.cmd`) và gọi `performAction()`.
+B3. Bảng `LoginScr` (Nhập nick) xuất hiện. Cần phải set cờ `LoginScr.isContinueToLogin = false` để xoá cache acc cũ.
+B4. Gạch text vào ổ `loginScr.tfUser.setText()` và `tfPass`.
+B5. Gọi `loginScr.savePass()` và cuối cùng là `loginScr.doLogin()`.
+
+2. CƠ CHẾ IPC TỐI ƯU HÓA ĐA TAB (REAL-TIME CONFIG)
 ---------------------------------------------------------
-- Bấm nút "➕ Thêm" để tạo 1 dòng trống mới. 
-- Click chuột vào cột "Tài Khoản" và "Mật Khẩu" để gõ nick của bạn vào. 
-- Dữ liệu sẽ TỰ ĐỘNG lưu lại (vào file accounts.json) mỗi khi bạn đóng bảng Launcher, bạn không cần nhấn lưu.
-- Nếu muốn xoá 1 hoặc nhiều tài khoản, hãy bôi đen dòng đó (click chuột vào lề trái của dòng) và bấm nút "🗑️ Xóa".
+Không giống như các Tool truyền thống tự móc hook Windows (WinAPI) để bóp handle game, Tool này sử dụng Kiến trúc IPC JSON file-polling trên Main Thread.
 
-Cách Khởi Động Game (Auto Login):
+[LauncherApp] ----(Ghi file JSON)---> [AutoLoginMod_Settings.json] <---(Đọc file JSON mỗi 2 giây)---- [AutoLoginMod (In-game)]
+
+Khi Dev click "Áp dụng" trên Launcher:
+- Launcher parse Data thành chuỗi JSON và ghi đè vào file `Mods/AutoLoginMod_Settings.json`.
+
+Khi Game chạy (`OnUpdate` trong `AutoLoginMod.cs`):
+- Code kiểm tra `FileInfo.LastWriteTime` của file JSON.
+- Nếu thời gian đổi -> Parse JSON để lấy Width, Height, FPS mong muốn.
+- Gọi `Screen.SetResolution(w, h, false)`.
+- *QUAN TRỌNG:* Unity gọi SetResolution chỉ thay đổi window size bên ngoài, còn tỷ lệ ma trận vẽ (Canvas Matrix) bên trong game Tái Sinh Ngọc Rồng là fix cứng. 
+  Do đó, DEV bắt buộc phải hack trực tiếp vào các biến static `GameCanvas.w/.h/.hw/.hh` và gọi hàm private của game là `Il2Cpp.Main.main.setsizeChange()` để yêu cầu Game recalculate lại UI tỉ lệ thuận với Window Size.
+
+3. MỞ RỘNG TÍNH NĂNG (GỢI Ý CHO DEV SAU)
 ---------------------------------------------------------
-Mở Đã Chọn:
-- Chọn 1 hoặc nhiều tài khoản trong danh sách (giữ nút Ctrl hoặc Shift để chọn nhiều dòng).
-- Bấm nút "▶ Mở Đã Chọn". Tool sẽ mở lượng cửa sổ game tương ứng với các acc bạn bôi đen. Game sẽ tự động vào Menu, tự bấm Đổi Tài Khoản, tự điền nick/pass của bạn và vào trong game!
-
-Mở Tất Cả: 
-- Bấm nút "🚀 MỞ TẤT CẢ". Chức năng này sẽ mở toàn bộ các acc có trong bảng của bạn cùng một lúc. Hãy cẩn thận giật lag máy nếu mở quá nhiều tab cùng 1 lúc!
-
-Sử dụng Bảng Điều Khiển Đồ Họa Động (Giảm Lag):
----------------------------------------------------------
-Tool cung cấp một tính năng cực kì bá đạo: Thay đổi đồ hoạ/Kích cỡ màn hình trực tiếp kể cả khi game đang chạy!
-
-1. Tại phần "Bảng Điều Khiển Đồ Họa Động (Tất Cả Tab)" ở dưới cùng:
-2. Thay đổi các thông số Rộng, Cao (Kích thước cửa sổ) và FPS (Tốc độ khung hình).
-   * Khuyên dùng để treo Máy: Rộng: 400 - Cao: 300 - FPS: 10
-3. Bấm "Áp dụng". 
-4. NGAY LẬP TỨC các cửa sổ game đang mở sẽ được thu bé lại, đồ hoạ sẽ được xoá bỏ hoàn toàn và màn hình được fix không bị lệch hình để giúp CPU/GPU của bạn trống cực kỳ nhiều, dễ dàng treo vài chục tab!
-5. Muốn soi đồ/kiểm tra game: Chỉnh Rộng lên 1024, Cao 600, FPS 60, và bấm "Áp Dụng", các màn hình của tab game sẽ tự động to trở lại bình thường!
+Nếu bạn muốn viết thêm Auto Làm Nhiệm Vụ, Auto Đánh Quái:
+- Hãy sử dụng DnSpy/ILSpy để đọc class `Char`, `GameScr`, `Mob` trong file Dummy `Assembly-CSharp.dll`.
+- Tạo thêm bảng cấu hình trong LauncherApp (Vd: Checkbox "Tự đánh", "Tự nhặt").
+- Ghi trạng thái checkbox này vào `AutoLoginMod_Settings.json` để C# Mod đọc và thực thi hàm `GameScr.gI().autoPlay()`.
